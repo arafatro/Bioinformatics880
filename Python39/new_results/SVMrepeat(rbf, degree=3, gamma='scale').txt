@@ -1,0 +1,20 @@
+10 folds
+******************** Cross Validation Score ********************
+Accuracy: 0.9858899892084048
+MCC: 0.9717300711508369
+Precision: 0.9854250851545239
+Roc AUC score: 0.9859773673822242
+F1 score: 0.9860812804277895
+Sensitivity: 0.9868934750556946
+Specifity: 0.9850613474845886
+
+******************** Independent Test Score ********************
+Accuracy: 0.9932584269662922
+MCC: 0.9866071428571429
+Precision: 1.0
+Roc AUC score: 0.9933035714285714
+F1 score: 0.9932584269662922
+Sensitivity: 0.9866071343421936
+Specifity: 1.0
+
+

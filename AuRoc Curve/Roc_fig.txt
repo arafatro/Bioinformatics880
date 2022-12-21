@@ -1,0 +1,39 @@
+df = pd.read_csv('res.csv')
+
+y_true = df.iloc[:, 0].values
+y_pred = df.iloc[:, 1].values
+y_score = df.iloc[:, 2].values
+
+fig = plt.gcf()
+fig.set_size_inches(12, 8)
+
+inc = 61600
+low = 0
+auc = []
+
+for i in range(5):
+    auc_score = roc_auc_score(y_true[low:low+inc], y_score[low:low+inc])
+    auc.append(auc_score*100)
+    fpr, tpr, _ = roc_curve(y_true[low:low+inc], y_score[low:low+inc])
+    
+    low += inc
+
+    plt.plot(fpr, tpr, linestyle='-', lw=3, label='Fold {} (auROC = {:.2f})'.format(i+1, auc_score*100) )
+
+    
+plt.plot([0, 1], [0, 1], linestyle='--', lw=3, color='r',label='Random', alpha=.8)
+
+std = np.std(auc)
+avg = np.mean(auc)
+fprr, tprr, _ = roc_curve(y_true, y_score)
+plt.plot(fprr, tprr, linestyle='-', lw=1, label='Mean (auROC = {:.2f} $\pm$ {:.2f})'.format(avg, std) )
+
+plt.xticks(fontsize=20, rotation=0)
+plt.yticks(fontsize=20, rotation=0)
+
+plt.xlabel('False Positive Rate', fontweight='bold', fontsize=22)
+plt.ylabel('True Positive Rate', fontweight='bold', fontsize=22)
+
+plt.legend(loc='lower right', bbox_to_anchor=( 1.0, 0.02),  ncol=1 , fancybox=True , shadow=True, fontsize=18)
+plt.tight_layout()
+plt.grid(axis='both')

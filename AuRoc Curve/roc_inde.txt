@@ -1,0 +1,191 @@
+﻿from sklearn.model_selection import cross_validate
+from sklearn.metrics import make_scorer, roc_curve, auc, matthews_corrcoef, precision_recall_curve, average_precision_score
+from imblearn.metrics import sensitivity_score, specificity_score
+from scipy import interp
+
+
+tprs = []
+def plt_curve(lst, name):
+  plt.figure(figsize=(10,7))
+  
+  for idx, itm in enumerate(lst):
+    fpr, tpr = itm
+    tprs.append(interp(np.linspace(0, 1, 100), fpr, tpr))
+    tprs[-1][0] = 0.0
+#     plt.plot(fpr, tpr, lw=1, label='ROC fold %d (AUC = %0.2f)' % (idx+1, auc(fpr, tpr)))
+  plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='black',
+         label='Random Guess', alpha=.8)
+  mean_tpr = np.mean(tprs, axis=0)
+  mean_tpr[-1] = 1.0
+  mean_auc = auc(np.linspace(0, 1, 100), mean_tpr)
+  std_auc = np.std(aucs)
+  plt.plot(mean_fpr, mean_tpr, color='b',
+         label='% fold cross validation (AUC = %0.2f)' % (mean_auc),
+         lw=2, alpha=.8)
+  plt.xlim([0.0, 1.0])
+  plt.ylim([0.0, 1.0])
+  plt.xlabel('False Positive Rate')
+  plt.ylabel('True Positive Rate')
+  plt.title('Receiver operating characteristic')
+  plt.legend(loc="lower right")
+  figName = name + '.png'
+  plt.savefig(figName, bbox_inches='tight')
+  plt.show()
+
+
+  
+  
+def roc_plt(y_true, y_score):
+  fpr, tpr, _ = roc_curve(y_true, y_score, pos_label=1)
+  curves.append([fpr, tpr])
+  return 1
+
+
+def pr_curve(lst, apLst, name):
+  plt.figure(figsize=(10,7))
+  
+  f_scores = np.linspace(0.2, 0.8, num=4)
+  for f_score in f_scores:
+    x = np.linspace(0.01, 1)
+    y = f_score * x / (2 * x - f_score)
+    l, = plt.plot(x[y >= 0], y[y >= 0], color='gray', alpha=0.2)
+    plt.annotate('f1={0:0.1f}'.format(f_score), xy=(0.7, y[36] + 0.02))
+  
+  for idx, itm in enumerate(lst):
+    pre, rec = itm
+    plt.plot(pre, rec, lw=2, label='Precision-Recall fold %d (AP = %0.2f)' % (idx+1, apLst[idx]))
+  plt.ylim([0.0, 1.0])
+  plt.xlim([0.0, 1.0])
+  plt.xlabel('Recall')
+  plt.ylabel('Precision')
+  plt.title('Precision-Recall')
+  plt.legend(loc="lower right")
+  figName = name + '.png'
+  plt.savefig(figName, bbox_inches='tight')
+  plt.show()
+
+
+  
+  
+def pr_plt(y_true, y_score):
+  precision, recall, _ = precision_recall_curve(y_true, y_score, pos_label=1)
+  pr_curves.append([precision, recall])
+  return 1
+
+
+metrs = {
+         'roc_plt': make_scorer(roc_plt, needs_proba=True), 
+         'pr_plt': make_scorer(pr_plt, needs_proba=True), 
+         'average_precision': make_scorer(average_precision_score, needs_proba=True), 
+         'matthews_corrcoef': make_scorer(matthews_corrcoef), 
+         'sensitivity_score': make_scorer(sensitivity_score), 
+         'specificity_score': make_scorer(specificity_score)
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+estimators = {
+              "XGBoost": XGBClassifier(),
+              "AdaBoost": AdaBoostClassifier(n_estimators=300),
+              "LightGBM": LGBMClassifier(num_leaves=31, n_estimators=40, learning_rate=0.1),
+              "ET": ExtraTreesClassifier(n_estimators=10, max_depth=None, min_samples_split=2, random_state=0),
+              "MLP": MLPClassifier(hidden_layer_sizes=(100, ), activation='relu', solver='adam', alpha=1, max_iter=1000, learning_rate='constant', learning_rate_init=0.001),
+              "Random Forest": RandomForestClassifier(bootstrap=True,
+                        criterion='gini',
+                        max_depth=8, max_features='auto', max_leaf_nodes=None,
+                        min_impurity_decrease=0.0, min_impurity_split=None,
+                        min_samples_leaf=4, min_samples_split=10,
+                        min_weight_fraction_leaf=0.0, n_estimators=300,
+                        oob_score=False,
+                        random_state=20,
+                        verbose=0, warm_start=False)
+}
+
+
+probas_pred = []
+avg_pre = []
+
+
+plt.figure(figsize=(10,7))
+
+
+for key, clf in estimators.items():
+  clf.fit(X_train_res, y_train_res)
+  y_pred = clf.predict(X_test)
+  y_score = clf.predict_proba(X_test)
+  probas_pred.append(y_score)
+  avg_pre.append(average_precision_score(y_test, y_score[:, 1], pos_label=1))
+
+
+  fpr, tpr, _ = roc_curve(y_test, y_score[:, 1], pos_label=1)
+  
+  plt.plot(fpr, tpr, lw=2, label='ROC for %s (AUC = %0.2f)' % (key, auc(fpr, tpr)))
+  print("***Independent Test***")
+  mat_cor_coef = matthews_corrcoef(y_test, y_pred)
+  print("matthews_corrcoef for " + key + ": ", mat_cor_coef)
+  print()
+
+
+  sen_scr = sensitivity_score(y_test, y_pred)
+  print("sensitivity_score for " + key + ": ", sen_scr)
+  print()
+
+
+  spe_scr = specificity_score(y_test, y_pred)
+  print("specificity_score for " + key + ": ", spe_scr)
+  print()
+plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='black',
+       label='Random Guess', alpha=.8)   
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+figName = "Compare_All_ROC" + '.png'
+plt.savefig(figName, bbox_inches='tight')
+plt.show()
+
+
+
+
+plt.figure(figsize=(10,7))
+
+
+f_scores = np.linspace(0.2, 0.8, num=4)
+for f_score in f_scores:
+  x = np.linspace(0.01, 1)
+  y = f_score * x / (2 * x - f_score)
+  l, = plt.plot(x[y >= 0], y[y >= 0], color='gray', alpha=0.2)
+  plt.annotate('f1={0:0.1f}'.format(f_score), xy=(0.7, y[36] + 0.02))
+
+
+keyZ = list(estimators.keys())
+for idx, y_score in enumerate(probas_pred):
+  pre, rec, _ = precision_recall_curve(y_test, y_score[:, 1], pos_label=1)
+  
+  plt.plot(pre, rec, lw=2, label='Precision-Recall Curve for %s (AP = %0.2f)' % (keyZ[idx], avg_pre[idx]))
+plt.plot([1, 0], [0, 1], linestyle='--', lw=2, color='black',
+       label='Random Guess', alpha=.8)  
+plt.ylim([0.0, 1.0])
+plt.xlim([0.0, 1.0])
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall')
+plt.legend(loc="lower right")
+figName = "Compare_All_Precision-Recall" + '.png'
+plt.savefig(figName, bbox_inches='tight')
+plt.show()

@@ -1,0 +1,1 @@
+adehzangi@viking:~/Downloads/Protein_database_PTM/Crotonylation/filter_name$ for i in `ls *`; do cp ../Crotonylation/$i.* ../filter_seq_40/; done
